@@ -1,1 +1,2 @@
-ls basics
+#!/bin/bash
+ls -a basics
