@@ -20,49 +20,25 @@
 
 #Displays Usage: manage_my_process {start|stop|restart}
 
-F_Containin_PID= "/var/run/my_process.pid"
-P= "manage_my_process"
-#P stands for the name of the file "manage_my_process"
-
-start () {
-if [ -f "$F_Containin_PID" ];
+if [ "${1}" == "start" ]
 then
     ./manage_my_process &
     touch /var/run/my_process.pid
-    echo "running manage_my_process"
-    exit 1
-fi
-    ./manage_my_process &
-    touch /var/run/my_process.pid 
-    echo "$P started"
-}
-
-stop () {
-if [ ! -f "$F_Containin_PID" ];
+    echo "$!" > /var/run/my_process.pid
+    echo "manage_my_process started"
+elif [ "${1}" == "stop" ]
 then
-    echo "not running manage_my_process"
-    exit 1
-fi
-
-    kill $F_Containin_PID || {echo "Failed to stop $P"; exit 1;}
-    rm -f "$F_Containin_PID"
-    echo "$P stopped"
-}
-
-restart (){
-
-    stop
-    start
-    echo "$P restarted"
-}
-
-if [ "$1" = "start" ]; then
-    start
-elif [ "$1" = "stop" ]; then
-    stop
-elif [ "$1" = "restart" ]; then
-    restart
+    echo "manage_my_process stopped"
+    kill "$(cat /var/run/my_process.pid)"
+    rm /var/run/my_process.pid
+elif [ "${1}" == "restart" ]
+then
+    kill "$(cat /var/run/my_process.pid)"
+    rm /var/run/my_process.pid
+    ./manage_my_process &
+    touch /var/run/my_process.pid
+    echo "$!" > /var/run/my_process.pid
+    echo "manage_my_process restarted"
 else
-    echo "Usage: $P {start|stop|restart}"
-    exit 1
+    echo "Usage: manage_my_process {start|stop|restart}"
 fi
