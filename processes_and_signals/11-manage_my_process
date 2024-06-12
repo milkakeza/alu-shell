@@ -20,25 +20,46 @@
 
 #Displays Usage: manage_my_process {start|stop|restart}
 
-if [ "${1}" == "start" ]
+F_Containin_PID= "/var/run/my_process.pid"
+
+start () {
+if [ -f "$F_Containin_PID" ];
 then
     ./manage_my_process &
     touch /var/run/my_process.pid
-    echo "$!" > /var/run/my_process.pid
+    echo "running manage_my_process"
+    exit 1
+fi
+    ./manage_my_process &
+    touch /var/run/my_process.pid 
     echo "manage_my_process started"
-elif [ "${1}" == "stop" ]
+}
+
+stop () {
+if [ ! -f "$F_Containin_PID" ];
 then
+    echo "not running manage_my_process"
+    exit 1
+fi
+
+    kill $F_Containin_PID
+    rm -f "$F_Containin_PID"
     echo "manage_my_process stopped"
-    kill "$(cat /var/run/my_process.pid)"
-    rm /var/run/my_process.pid
-elif [ "${1}" == "restart" ]
-then
-    kill "$(cat /var/run/my_process.pid)"
-    rm /var/run/my_process.pid
-    ./manage_my_process &
-    touch /var/run/my_process.pid
-    echo "$!" > /var/run/my_process.pid
+}
+
+restart (){
+
+    stop
+    start
     echo "manage_my_process restarted"
+}
+
+if [ "$1" = "start" ]; then
+    start
+elif [ "$1" = "stop" ]; then
+    stop
+elif [ "$1" = "restart" ]; then
+    restart
 else
     echo "Usage: manage_my_process {start|stop|restart}"
 fi
