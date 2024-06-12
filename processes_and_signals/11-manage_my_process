@@ -21,6 +21,8 @@
 #Displays Usage: manage_my_process {start|stop|restart}
 
 F_Containin_PID= "/var/run/my_process.pid"
+P= "manage_my_process"
+#P stands for the name of the file "manage_my_process"
 
 start () {
 if [ -f "$F_Containin_PID" ];
@@ -32,7 +34,7 @@ then
 fi
     ./manage_my_process &
     touch /var/run/my_process.pid 
-    echo "manage_my_process started"
+    echo "$P started"
 }
 
 stop () {
@@ -42,16 +44,16 @@ then
     exit 1
 fi
 
-    kill $F_Containin_PID
+    kill $F_Containin_PID || {echo "Failed to stop $P"; exit 1;}
     rm -f "$F_Containin_PID"
-    echo "manage_my_process stopped"
+    echo "$P stopped"
 }
 
 restart (){
 
     stop
     start
-    echo "manage_my_process restarted"
+    echo "$P restarted"
 }
 
 if [ "$1" = "start" ]; then
@@ -61,5 +63,6 @@ elif [ "$1" = "stop" ]; then
 elif [ "$1" = "restart" ]; then
     restart
 else
-    echo "Usage: manage_my_process {start|stop|restart}"
+    echo "Usage: $P {start|stop|restart}"
+    exit 1
 fi
