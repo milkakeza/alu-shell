@@ -20,25 +20,78 @@
 
 #Displays Usage: manage_my_process {start|stop|restart}
 
-if [ "${1}" = "start" ]
-then
-    ./manage_my_process &
-    touch /var/run/my_process.pid
-    echo "$!" > /var/run/my_process.pid
-    echo "manage_my_process started"
-elif [ "${1}" = "stop" ]
-then
+PID_FILE="/var/run/my_process.pid"
+MANAGE_PROCESS="./manage_my_process"
+
+echo "Script started with argument: $1"
+
+if [ "$1" = "start" ]; then
+    if [ -f "$PID_FILE" ]; then
+        echo "Process is already running with PID: $(cat "$PID_FILE")"
+        exit 1
+    fi
+    echo "Starting manage_my_process..."
+    $MANAGE_PROCESS &
+    if [ $? -ne 0 ]; then
+        echo "Failed to start manage_my_process"
+        exit 1
+    fi
+    mkdir -p /var/run
+    echo "$!" > "$PID_FILE"
+    if [ $? -ne 0 ]; then
+        echo "Failed to write PID file"
+        exit 1
+    fi
+    echo "manage_my_process started with PID: $(cat "$PID_FILE")"
+
+elif [ "$1" = "stop" ]; then
+    if [ ! -f "$PID_FILE" ]; then
+        echo "No PID file found. Is the process running?"
+        exit 1
+    fi
+    echo "Stopping manage_my_process..."
+    kill "$(cat "$PID_FILE")"
+    if [ $? -ne 0 ]; then
+        echo "Failed to kill process"
+        exit 1
+    fi
+    rm "$PID_FILE"
+    if [ $? -ne 0 ]; then
+        echo "Failed to remove PID file"
+        exit 1
+    fi
     echo "manage_my_process stopped"
-    kill "$(cat /var/run/my_process.pid)"
-    rm /var/run/my_process.pid
-elif [ "${1}" = "restart" ]
-then
-    kill "$(cat /var/run/my_process.pid)"
-    rm /var/run/my_process.pid
-    ./manage_my_process &
-    touch /var/run/my_process.pid
-    echo "$!" > /var/run/my_process.pid
-    echo "manage_my_process restarted"
+
+elif [ "$1" = "restart" ]; then
+    if [ -f "$PID_FILE" ]; then
+        echo "Restarting manage_my_process..."
+        kill "$(cat "$PID_FILE")"
+        if [ $? -ne 0 ]; then
+            echo "Failed to kill process"
+            exit 1
+        fi
+        rm "$PID_FILE"
+        if [ $? -ne 0 ]; then
+            echo "Failed to remove PID file"
+            exit 1
+        fi
+    else
+        echo "No PID file found. Starting manage_my_process..."
+    fi
+    $MANAGE_PROCESS &
+    if [ $? -ne 0 ]; then
+        echo "Failed to start manage_my_process"
+        exit 1
+    fi
+    mkdir -p /var/run
+    echo "$!" > "$PID_FILE"
+    if [ $? -ne 0 ]; then
+        echo "Failed to write PID file"
+        exit 1
+    fi
+    echo "manage_my_process restarted with PID: $(cat "$PID_FILE")"
+
 else
     echo "Usage: manage_my_process {start|stop|restart}"
+    exit 1
 fi
